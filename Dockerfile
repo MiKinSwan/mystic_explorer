@@ -22,7 +22,8 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 COPY pyproject.toml .
 
 # Install production dependencies
-RUN uv pip install --system -r <(uv pip compile pyproject.toml)
+RUN uv pip compile pyproject.toml -o requirements.txt && \
+    uv pip install --system -r requirements.txt
 
 # Copy application source code
 COPY . .
