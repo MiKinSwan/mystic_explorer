@@ -5,10 +5,17 @@ module can be imported without DATABASE_URL set (e.g. by tools/tests that
 don't touch the database).
 
 Required env var: DATABASE_URL - a standard SQLAlchemy Postgres URL, e.g.
-    postgresql+psycopg://user:pass@host:5432/dbname?sslmode=require
-(Supabase's dashboard gives you this under Project Settings > Database >
-Connection string - use the "Session pooler" or direct connection string,
-psycopg driver, and keep sslmode=require.)
+    postgresql+psycopg://user:pass@host:6543/dbname?sslmode=require
+(Supabase's dashboard gives you this under Connect > Connection String - use
+the "Transaction pooler" or "Session pooler" string, not "Direct connection":
+Supabase's direct-connection host is IPv6-only, which many hosts (e.g.
+Render's free tier) can't route to at all - the pooler is IPv4-compatible.)
+
+`prepare_threshold=None` disables psycopg's server-side prepared-statement
+cache: under transaction-mode pooling, consecutive queries on one logical
+connection can land on different backend connections, so a statement
+prepared on one backend won't exist on the next - server-side prepare must
+stay off. Harmless (and unnecessary) under session pooling/direct too.
 """
 
 from __future__ import annotations
@@ -30,6 +37,7 @@ def get_engine() -> Engine:
         max_overflow=2,
         pool_timeout=30,
         pool_recycle=1800,
+        connect_args={"prepare_threshold": None},
     )
 
 
